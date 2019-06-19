@@ -1,0 +1,35 @@
+---
+
+# Copyright (C) 2019 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+
+version: '3'
+
+services:
+  web:
+    image: nginx:1.14.2-alpine
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      # Don't make these read-only, or else docker will fail to mount
+      - ./data/usr/share/nginx/html:/usr/share/nginx/html
+      - ./data/srv/tftp:/usr/share/nginx/html/tftp
+      - ./data/srv/tftp:/usr/share/nginx/html/tftp/efi64
+      - ./template/nginx/index.html:/usr/share/nginx/html/index.html
+      - ./template/nginx/default.conf:/etc/nginx/conf.d/default.conf
+ 
+  dnsmasq:
+    image: rni-dnsmasq
+    restart: always
+    volumes:
+      - ./template/rni_bg.png:/srv/tftp/rni_bg.png
+      - ./template/rni_bg.png:/srv/tftp/efi64/rni_bg.png
+      - ./data/srv/tftp/images:/srv/tftp/images
+      - ./data/srv/tftp/images:/srv/tftp/efi64/images
+      - ./data/srv/tftp/pxelinux.cfg/default:/srv/tftp/pxelinux.cfg/default
+      - ./data/srv/tftp/pxelinux.cfg/default:/srv/tftp/efi64/pxelinux.cfg/default
+      - ./data/etc/dnsmasq.conf:/etc/dnsmasq.conf
+    network_mode: host
+    cap_add:
+      - NET_ADMIN

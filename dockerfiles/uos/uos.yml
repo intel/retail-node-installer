@@ -1,0 +1,120 @@
+# Copyright (C) 2019 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+
+kernel:
+  image: alpine/kernel:v3.9
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
+init:
+  - linuxkit/init:4448c4b6d4308244160b71c423bc9df32bc180db
+  - linuxkit/runc:a81d48a1568f41b1c2e048fe017dbd88c6a4bdcc
+  - linuxkit/containerd:56e03cfa92d75d6eb5a7fc44742e50f427ba29a3
+  - linuxkit/ca-certificates:v0.6
+onboot:
+  - name: modprobe
+    image: linuxkit/modprobe:v0.6
+    command: ["modprobe", "-a", "virtio_net", "virtio_blk", "nvme-core", "mmc_block"]
+  - name: sysctl
+    image: linuxkit/sysctl:v0.6
+  - name: sysfs
+    image: linuxkit/sysfs:v0.6
+  - name: rngd1
+    image: linuxkit/rngd:v0.6
+    command: ["/sbin/rngd", "-1"]
+services:
+  - name: getty
+    image: linuxkit/getty:2eb742cd7a68e14cf50577c02f30147bc406e478
+    env:
+     - INSECURE=true
+    binds:
+      - /:/hostroot/fs
+      - /containers:/containers
+      - /dev:/dev
+      - /etc:/hostroot/etc
+      - /etc/profile.d/aliases.sh:/etc/profile.d/aliases.sh
+      - /etc/resolv.conf:/etc/resolv.conf
+      - /lib/modules:/lib/modules
+      - /run:/run
+      - /sys:/sys
+      - /tmp:/tmp
+      - /usr/bin/ctr:/usr/bin/ctr
+      - /usr/bin/runc:/usr/bin/runc
+      - /usr/local/bin/utilityos:/usr/local/bin/utilityos
+      - /var/log:/var/log
+      - /var/lib/containerd:/var/lib/containerd
+  - name: rngd
+    image: linuxkit/rngd:v0.6
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:v0.6
+  - name: ntpd
+    image: linuxkit/openntpd:v0.6
+  - name: sshd
+    image: linuxkit/sshd:c4bc89cf0d66733c923ab9cb46198b599eb99320
+    binds:
+      - /:/hostroot/fs
+      - /containers:/containers
+      - /dev:/dev
+      - /etc:/hostroot/etc
+      - /etc/getty.shadow:/etc/shadow
+      - /etc/profile.d/aliases.sh:/etc/profile.d/aliases.sh
+      - /etc/resolv.conf:/etc/resolv.conf
+      - /etc/ssh/sshd_config:/etc/ssh/sshd_config
+      - /lib/modules:/lib/modules
+      - /root/.ssh:/root/.ssh   
+      - /run:/run
+      - /sys:/sys
+      - /tmp:/tmp
+      - /usr/bin/ctr:/usr/bin/ctr
+      - /usr/bin/runc:/usr/bin/runc
+      - /usr/local/bin/utilityos:/usr/local/bin/utilityos
+      - /var/log:/var/log
+      - /var/lib/containerd:/var/lib/containerd
+  - name: dyninit
+    image: rni/dyninit:v1.0
+    capabilities:
+     - all
+    pid: host
+    net: host
+    mounts:
+      - type: cgroup
+        options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+      - /:/hostroot/fs
+      - /dev:/dev
+      - /etc/docker/daemon.json:/etc/docker/daemon.json
+      - /etc/resolv.conf:/etc/resolv.conf
+      - /lib/modules:/lib/modules
+      - /sys:/sys
+      - /tmp:/tmp
+files:
+  - path: var/lib/docker
+    directory: true
+  - path: etc/getty.shadow
+    contents: |
+      root:$6$1QMjH.ST8$2IDA3U50M925KDJwmtlC9e9g.8g2ZQYtiFi6.BXLFM11mXDvrFyFzl3GS6GOC7r3g5tTCOIVO1oN/tJQDpdX8/:17322:0:::::
+      uos:$6$1QMjH.ST8$2IDA3U50M925KDJwmtlC9e9g.8g2ZQYtiFi6.BXLFM11mXDvrFyFzl3GS6GOC7r3g5tTCOIVO1oN/tJQDpdX8/:17322:1000:::::
+  - path: etc/ssh/sshd_config
+    contents: |
+      PasswordAuthentication yes
+  - path: root/.ssh/authorized_keys
+    contents: ""
+      # ssh-rsa fill-this-in-with-an-ssh-key-if-you-want
+    mode: "0600"
+  - path: etc/profile.d/aliases.sh
+    contents: |
+      alias docker="ctr -n services.linuxkit t exec -t --exec-id docker-cli-$(uuidgen) dyninit docker"
+  - path: etc/docker/daemon.json
+    contents: '{"debug": true}'
+  - path: usr/local/bin/utilityos
+    contents: |
+      ctr -n services.linuxkit t exec -t --exec-id dyninit-cli-$(uuidgen) dyninit bash
+    mode: "0777"
+  - path: etc/issue
+    contents: |
+      ./##   /##  /######   /###### 
+      | ##  | ## /##__  ## /##__  ##
+      | ##  | ##| ##  \ ##| ##  \__/
+      | ##  | ##| ##  | ##|  ###### 
+      | ##  | ##| ##  | ## \____  ##
+      | ##  | ##| ##  | ## /##  \ ##
+      |  ######/|  ######/|  ######/
+       \______/  \______/  \______/ 

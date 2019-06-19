@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Copyright (C) 2019 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+
+rngd -r /dev/urandom
+
+/sbin/udevadm hwdb --update && /
+/sbin/udevd --debug --daemon
+
+sleep 3
+
+echo "[            ] Updating system time..." 2>&1 | tee -a /dev/tty0
+ntpd -d -N -q -n -p us.pool.ntp.org 2>&1 | tee -a /dev/tty0
+
+echo "[            ] Discovering hardware..." 2>&1 | tee -a /dev/tty0
+for f in $(ls /sys/bus/*/devices/*/modalias); do 
+    modprobe -abq $(cat $f) >/dev/null 2>&1
+done
+
+sleep 1
+
+for f in $(ls /sys/bus/*/devices/*/modalias); do 
+    modprobe -abq $(cat $f) >/dev/null 2>&1
+done
+
+iptables -L  >/dev/null 2>&1
+if [ $? = 0 ]; then
+    # /usr/local/bin/docker-init /usr/local/bin/dockerd &
+    /usr/local/bin/dockerd &
+else
+    /usr/local/bin/dockerd --iptables=false &
+fi
+
+/opt/bootstrap/init
+
+supervisord -n

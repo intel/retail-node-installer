@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Copyright (C) 2019 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+
+source /opt/bootstrap/functions
+
+kernel_params=$(cat /proc/cmdline)
+if [[ $kernel_params = *"bootstrap="* ]]; then
+	tmp="${kernel_params##*bootstrap=}"
+	param_bootstrap="${tmp%% *}"
+else
+	echo "'bootstrap' kernel parameter missing!" 2>&1 | tee -a /dev/tty0
+	sleep 30
+	reboot
+fi
+
+
+if [[ $kernel_params = *"httpserver="* ]]; then
+	tmp="${kernel_params##*httpserver=}"
+	param_httpserver="${tmp%% *}"
+else
+	echo "'httpserver' kernel parameter missing!" 2>&1 | tee -a /dev/tty0
+	sleep 30
+	reboot
+fi
+
+wget -O - ${param_bootstrap} 2> /dev/tty0 | bash -s - $param_httpserver
+
