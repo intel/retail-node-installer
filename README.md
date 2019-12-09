@@ -2,15 +2,15 @@
 
 ## Introduction
 
-The Retail Node Installer (RNI) is a collection of scripts that enables network-wide [PXE](https://docs.oracle.com/cd/E24628_01/em.121/e27046/appdx_pxeboot.htm#EMLCM12198) booting of customizable operating systems, referred to as "profiles". It has a lightweight footprint, requiring only Bash, Docker, and Docker Compose. Profiles can be any typical Linux distribution, such as RancherOS.
+The Retail Node Installer (RNI) is a collection of scripts that enables network-wide [PXE](https://docs.oracle.com/cd/E24628_01/em.121/e27046/appdx_pxeboot.htm#EMLCM12198) booting of customizable operating systems, referred to as "profiles". It has a lightweight footprint, requiring only Bash, Docker, and Docker Compose. Profiles can be any typical Linux distribution, such as RancherOS, Ubuntu, Clear Linux.
 
 The main executable to setup a device as a Retail Node Installer is `build.sh`. This script will automatically build a few Docker images, download necessary files as required by profiles, prepare the PXE boot menu, and launch the following dockerized services:
-   
+
   - **dnsmasq** (provides DHCP and TFTP services)
-   
+
   - **nginx**
 
-Currently, only RancherOS is provided as an example profile. This profile uses a special [kickstart](https://en.wikipedia.org/wiki/Kickstart_(Linux)) to run `bootstrap.sh` and install Rancher to disk. Future releases of Retail Node Installer aim to include enhanced integration with more popular operating systems.
+[RancherOS](https://github.com/intel/rni-profile-base-rancheros), [Clear Linux](https://github.com/intel/rni-profile-base-clearlinux) and [Ubuntu](https://github.com/intel/rni-profile-base-ubuntu) are provided as example profiles.
 
 This document will guide you through the following:
 
@@ -76,20 +76,23 @@ dhcp_range_maximum: 192.168.1.250
 network_broadcast_ip: 192.168.1.255
 network_gateway_ip: 192.168.1.1
 network_dns_secondary: 8.8.8.8
-rni_ip: 192.168.1.11
+host_ip: 192.168.1.11
 
 profiles:
-  - git_remote_url: https://github.com/intel/rni-profile-base-rancheros.git
-    git_branch_name: master
+  - git_remote_url: https://github.com/intel/rni-profile-base-clearlinux.git
+    profile_branch: master
+    profile_base_branch: None
     git_username: ""
     git_token: ""
-    name: rancher-profile
-    custom_git_arguments: ""
+    name: clearlinux_profile
+    custom_git_arguments: --depth=1
+
 ```
 
 Make changes according to your needs, including your GitHub username and [token](https://help.github.com/en/enterprise/2.16/user/articles/creating-a-personal-access-token-for-the-command-line) if needed (using a password is not recommended for security reasons), with the following guidance:
 
-  * Under the `profiles` section, update the git remote to match the HTTPS-based git remote URL for the Rancher profile.
+  * Public repositories that do not require a username and token/password **must** have the values of `git_username=""` and `git_token=""`
+  * Under the `profiles` section, update the git remote to match the HTTPS-based `git remote` URL for your profile. Also update git remote branch by setting `profile_branch` and if it requires any base branch then update it by setting `profile_base_branch` for your profile else set `profile_base_branch` as **None**
   * Ensure that the network configuration matches your needs. If values are not specified, Retail Node Installer will default to a `/24` network with a DHCP range of `x.x.x.100-x.x.x.250`.
   * For special situations, custom git flags can be added on the fly by setting `custom_git_arguments`. It _must_ be defined (see next bullet point), so if no custom git flags are needed, specify `None` or `""`.
   * Every profile must have **all** values defined in the config. For example, you cannot remove `custom_git_arguments`; you must specify a value. This is a [known limitation](#known-limitations).
@@ -140,7 +143,7 @@ This section is not required for setting up an Retail Node Installer and buildin
 ```yaml
 ---
 
-kernel_arguments: rancher.cloud_init.datasources=[url:http://@@RNI_IP@@/profile/@@PROFILE_NAME@@/dyn-ks.yml]
+kernel_arguments: rancher.cloud_init.datasources=[url:http://@@HOST_IP@@/profile/@@PROFILE_NAME@@/dyn-ks.yml]
 ```
 
 Variables surrounded by `@@` symbols are handled by the templating engine in Retail Node Installer. Please read [Templating](#templating) for more information on this topic.
@@ -151,12 +154,12 @@ Retail Node Installer has a few essential templating capabilies that assist with
 
 In a profile's `conf/config.yml`, for the `kernel_arguments` variable only, the following template variables are supported:
 
-* `@@RNI_DHCP_MIN@@` - `dhcp_range_minimum`
-* `@@RNI_DHCP_MAX@@` - `dhcp_range_maximum`
-* `@@RNI_NETWORK_BROADCAST_IP@@` - `network_broadcast_ip`
-* `@@RNI_NETWORK_GATEWAY_IP@@` - `network_gateway_ip`
-* `@@RNI_IP@@` - `rni_ip`
-* `@@RNI_NETWORK_DNS_SECONDARY@@` - `network_dns_secondary`
+* `@@DHCP_MIN@@` - `dhcp_range_minimum`
+* `@@DHCP_MAX@@` - `dhcp_range_maximum`
+* `@@NETWORK_BROADCAST_IP@@` - `network_broadcast_ip`
+* `@@NETWORK_GATEWAY_IP@@` - `network_gateway_ip`
+* `@@HOST_IP@@` - `host_ip`
+* `@@NETWORK_DNS_SECONDARY@@` - `network_dns_secondary`
 
 Any file with the suffix `.rnitemplate` in a profile will support all of the above as well as:
 

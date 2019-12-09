@@ -120,8 +120,8 @@ downloadPrivateDockerAWSImages() {
                     --env AWS_ACCESS_KEY_ID=${aws_access_key} \
                     --env AWS_SECRET_ACCESS_KEY=${aws_secret_key} \
                     --env AWS_DEFAULT_REGION=${aws_region} \
-                    rni-aws-cli \
-                    aws ecr get-login --registry-id ${aws_registry} | sed "s/\-e\ none//g"
+                    builder-aws-cli \
+                    sh -c "${AWS_CLI_PROXY} aws ecr get-login --registry-id ${aws_registry}" | sed "s/\-e\ none//g"
             )
 
             # Not all parameters are required to be passed in to

@@ -22,6 +22,7 @@ RUN apk update && apk add --no-cache \
     lddtree \
     lshw \
     lvm2 \
+    netcat-openbsd \
     openssh-client \
     openssl \
     parted \
@@ -33,7 +34,7 @@ RUN apk update && apk add --no-cache \
     syslinux \
     util-linux \
     wget \
-    xz 
+    xz
 
 RUN cp /etc/apk/repositories /etc/apk/repositories.bak && \
     sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories && \

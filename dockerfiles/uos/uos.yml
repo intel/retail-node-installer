@@ -59,7 +59,7 @@ services:
       - /etc/resolv.conf:/etc/resolv.conf
       - /etc/ssh/sshd_config:/etc/ssh/sshd_config
       - /lib/modules:/lib/modules
-      - /root/.ssh:/root/.ssh   
+      - /root/.ssh:/root/.ssh
       - /run:/run
       - /sys:/sys
       - /tmp:/tmp
@@ -69,7 +69,7 @@ services:
       - /var/log:/var/log
       - /var/lib/containerd:/var/lib/containerd
   - name: dyninit
-    image: rni/dyninit:v1.0
+    image: builder/dyninit:v1.0
     capabilities:
      - all
     pid: host
@@ -110,11 +110,11 @@ files:
     mode: "0777"
   - path: etc/issue
     contents: |
-      ./##   /##  /######   /###### 
+      ./##   /##  /######   /######
       | ##  | ## /##__  ## /##__  ##
       | ##  | ##| ##  \ ##| ##  \__/
-      | ##  | ##| ##  | ##|  ###### 
+      | ##  | ##| ##  | ##|  ######
       | ##  | ##| ##  | ## \____  ##
       | ##  | ##| ##  | ## /##  \ ##
       |  ######/|  ######/|  ######/
-       \______/  \______/  \______/ 
+       \______/  \______/  \______/

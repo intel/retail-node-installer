@@ -3,7 +3,7 @@
 # Copyright (C) 2019 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-LOG_FILE="rni.log"
+LOG_FILE="builder.log"
 
 C_RED='\e[31m'
 C_GREEN='\e[32m'
@@ -34,11 +34,11 @@ T_INFO_ICON="[${T_BOLD}${C_YELLOW}i${T_RESET}]"
 T_QST_ICON="${T_BOLD}[?]${T_RESET}"
 
 printMsg() {
-    echo -e "${1}" 2>&1 | tee -a /dev/tty0
+    echo -e "${1}" 2>&1
 }
 
 printMsgNoNewline() {
-    echo -n -e "${1}" 2>&1 | tee -a /dev/tty0
+    echo -n -e "${1}" 2>&1
 }
 
 printDatedMsg() {
@@ -84,14 +84,24 @@ logErrMsg() {
 
 logFataErrMsg() {
     logErrMsg "$1"
-    echo -e "${T_ERR}Preview:${T_RESET}" 2>&1 | tee -a /dev/tty0
-    tail -n 3 ${LOG_FILE} 2>&1 | tee -a /dev/tty0
-    echo -e "${T_ERR}Please check ${LOG_FILE} for more details.${T_RESET}\n\n" 2>&1 | tee -a /dev/tty0
+    echo -e "${T_ERR}Preview:${T_RESET}" 2>&1
+    tail -n 3 ${LOG_FILE} 2>&1
+    echo -e "${T_ERR}Please check ${LOG_FILE} for more details.${T_RESET}\n\n" 2>&1
     exit 1
 }
 
 logOkMsg() {
     logMsg "OK $1"
+}
+
+printAndLogDatedInfoMsg() {
+    printDatedInfoMsg "$1"
+    logMsg "$1"
+}
+
+printAndLogDatedErrMsg() {
+    printDatedErrMsg "$1"
+    logErrMsg "$1"
 }
 
 spinner() {
@@ -100,19 +110,19 @@ spinner() {
     local spinstr='|/-\'
     while [ "$(ps a | awk '{print $1}' | grep ${pid})" ]; do
         local temp=${spinstr#?}
-        printf " [%c]  " "${spinstr}" 2>&1 | tee -a /dev/tty0
+        printf " [%c]  " "${spinstr}" 2>&1
         local spinstr=${temp}${spinstr%"$temp"}
         sleep ${delay}
-        printf "\b\b\b\b\b\b" 2>&1 | tee -a /dev/tty0
+        printf "\b\b\b\b\b\b" 2>&1
     done
-    printf "    \b\b\b\b" 2>&1 | tee -a /dev/tty0
+    printf "    \b\b\b\b" 2>&1
 }
 
 run() {
     local msg=$1
     local runThis=$2
     local log=$3
-    echo -e -n "${C_BLUE}$(date +"%Y-%m-%d %I:%M:%S")${T_RESET} - ${msg}...${T_RESET}" 2>&1 | tee -a /dev/tty0
+    echo -e -n "${C_BLUE}$(date +"%Y-%m-%d %I:%M:%S")${T_RESET} - ${msg}...${T_RESET}" 2>&1
     echo "$(date +"%Y-%m-%d %I:%M:%S") START: Running ${runThis}..." >>${log}
     (eval ${runThis} >>${log} 2>&1) &
     spinner
@@ -125,14 +135,14 @@ run() {
     fi
     if [ "${success}" = false ]; then
         echo "$(date +"%Y-%m-%d %I:%M:%S") FAILED: Running ${runThis}..." >>${log}
-        echo -e "\n${C_BLUE}$(date +"%Y-%m-%d %I:%M:%S")${T_RESET} -   ${T_ERR_ICON}${T_ERR}FAILED: Running ${runThis}${T_RESET}" 2>&1 | tee -a /dev/tty0
-        echo -e "${T_ERR}Log Preview:${T_RESET}" 2>&1 | tee -a /dev/tty0
-        tail -n 3 ${log} 2>&1 | tee -a /dev/tty0
-        echo -e "${T_ERR}Please check ${log} for more details.${T_RESET}\n\n" 2>&1 | tee -a /dev/tty0
+        echo -e "\n${C_BLUE}$(date +"%Y-%m-%d %I:%M:%S")${T_RESET} -   ${T_ERR_ICON}${T_ERR}FAILED: Running ${runThis}${T_RESET}" 2>&1
+        echo -e "${T_ERR}Log Preview:${T_RESET}" 2>&1
+        tail -n 3 ${log} 2>&1
+        echo -e "${T_ERR}Please check ${log} for more details.${T_RESET}\n\n" 2>&1
         exit 1
     else
         echo "$(date +"%Y-%m-%d %I:%M:%S") SUCCESS: Running ${runThis}..." >>${log}
-        echo -e " ${T_OK_ICON} ${C_GREEN}Success${T_RESET}" 2>&1 | tee -a /dev/tty0
+        echo -e " ${T_OK_ICON} ${C_GREEN}Success${T_RESET}" 2>&1
     fi
 }
 

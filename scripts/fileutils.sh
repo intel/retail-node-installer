@@ -4,34 +4,34 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # This file contains functions and global variables intended to make
-# file management easier within Retail Node Installer scripts.
+# file management easier within this application's scripts.
 
 # If running this file alone, uncomment these lines
 # source "textutils.sh"
 # source "yamlparse.sh"
 
 # These are helper variables to quickly identify where things will be stored
-# These variables are used globally throughout Retail Node Installer scripts
+# These variables are used globally throughout this application's scripts
 WEB_ROOT="$(pwd)/data/usr/share/nginx/html"
 WEB_FILES="${WEB_ROOT}/files"
 WEB_PROFILE="${WEB_ROOT}/profile"
 TFTP_ROOT="$(pwd)/data/srv/tftp"
 TFTP_IMAGES="${TFTP_ROOT}/images"
 
-parseRNIConfig() {
-    local rniConfig="conf/config.yml"
-    if [[ -f ${rniConfig} ]]; then
+parseConfig() {
+    local builderConfig="conf/config.yml"
+    if [[ -f ${builderConfig} ]]; then
         # the file exists, go ahead and try to parse it
         # printDatedOkMsg "Found Profile, parsing..."
-        logOkMsg "Found rniConfig, parsing..."
+        logOkMsg "Found builderConfig, parsing..."
         # Parse the config.yml config file
         source "scripts/yamlparse.sh"
-        eval $(yamlParse "${rniConfig}" "rni_config_")
-        printDatedOkMsg "Loaded Retail Node Installer config successfully."
-        logOkMsg "Loaded Retail Node Installer config successfully."
+        eval $(yamlParse "${builderConfig}" "builder_config_")
+        printDatedOkMsg "Loaded config successfully."
+        logOkMsg "Loaded config successfully."
     else
-        printDatedErrMsg "Can't find Retail Node Installer configuration in ${rniConfig}"
-        logFataErrMsg "Can't find Retail Node Installer configuration in ${rniConfig}"
+        printDatedErrMsg "Can't find configuration in ${builderConfig}"
+        logFataErrMsg "Can't find configuration in ${builderConfig}"
         exit 1
     fi
 }
@@ -79,18 +79,22 @@ copySampleFile() {
     local targetFile=$2
 
     # Check if the target file exists and take a backup if it does
-    if [[ -f ${targetFile} ]]; then
-        local BACKUP_TIME=$(date +"%F_%T")
-        local BACKUP_FILE="${targetFile}_${BACKUP_TIME}"
-        set +e
-        logMsg  "$(cp ${targetFile} ${BACKUP_FILE} 2>&1)"
-        set -e
-        if [ $? -eq 0 ]; then
-            logOkMsg "backed up ${targetFile} to ${BACKUP_FILE}"
-        else
-            logErrMsg "problem backing up ${targetFile} to ${BACKUP_FILE}"
-            exit 1
+    if [[ "${SKIP_BACKUPS}" == "false" ]]; then
+        if [[ -f "${targetFile}" ]]; then
+            local BACKUP_TIME=$(date +"%F_%T")
+            local BACKUP_FILE="${targetFile}_${BACKUP_TIME}"
+            set +e
+            logMsg  "$(cp ${targetFile} ${BACKUP_FILE} 2>&1)"
+            set -e
+            if [ $? -eq 0 ]; then
+                logOkMsg "backed up ${targetFile} to ${BACKUP_FILE}"
+            else
+                logErrMsg "problem backing up ${targetFile} to ${BACKUP_FILE}"
+                exit 1
+            fi
         fi
+    else
+        logMsg "User chose to skip backing up files (was going to copy ${sourceFile} to ${targetFile})"
     fi
 
     set  +e
@@ -138,58 +142,57 @@ downloadPrivateDockerImage() {
     # make sure the destinationDirectory exists
     makeDirectory $(dirname "${destinationFile}")
 
-    #determine if we have the image already
+    # Note if we have the image already
     docker inspect ${targetName} >/dev/null 2>&1
     if [ $? -eq 0 ]; then
         # we already have the image so skip it
-        logMsg "Desired image ${targetName} exists${T_RESET}, skipping..."
-        printMsg "${T_OK_ICON} Desired image ${targetName} exists, ${C_YELLOW}skipping...${T_RESET}"
-    else
+        logMsg "Desired image ${targetName} exists${T_RESET}"
+        printMsg "${T_OK_ICON} Desired image ${targetName} exists${T_RESET}"
+    fi
 
-        # check if dockerAlreadyLoggedIn is set
-        # This is used for custom logins to a Docker registry,
-        # for example, the output of:
-        # aws ecr get-login --registry-id xxxxxxxx | sed "s/\-e\ none//g"
-        if [[ -z "${dockerAlreadyLoggedIn}" ]]; then
-            # login to the registry
-            # printMsg "${T_INFO_ICON} ${C_GRAY}Login to registry ${registry}..."
-            logMsg "Login to registry ${registry}..."
-            # this is potentially a long running process, show the spinner
-            run "Login to registry ${registry}..." \
-                "docker login -u ${username} -p ${password} ${registry}" \
-                ${LOG_FILE}
-        fi
+    # check if dockerAlreadyLoggedIn is set
+    # This is used for custom logins to a Docker registry,
+    # for example, the output of:
+    # aws ecr get-login --registry-id xxxxxxxx | sed "s/\-e\ none//g"
+    if [[ -z "${dockerAlreadyLoggedIn}" ]]; then
+        # login to the registry
+        # printMsg "${T_INFO_ICON} ${C_GRAY}Login to registry ${registry}..."
+        logMsg "Login to registry ${registry}..."
+        # this is potentially a long running process, show the spinner
+        run "Login to registry ${registry}..." \
+            "docker login -u ${username} -p ${password} ${registry}" \
+            ${LOG_FILE}
+    fi
+
+    if [ $? -eq 0 ]; then
+        # pull the image
+        printMsg "${T_INFO_ICON} ${C_GRAY}Logged in to registry, pulling image... ${T_RESET}"
+        logMsg "Logged in to registry, pulling image.. ${sourceName}..."
+        # this is potentially a long running process, show the spinner
+        run "Downloading ${registry}/${sourceName}" \
+            "docker pull ${registry}/${sourceName}" \
+            ${LOG_FILE}
 
         if [ $? -eq 0 ]; then
-            # pull the image
-            printMsg "${T_INFO_ICON} ${C_GRAY}Logged in to registry, pulling image... ${T_RESET}"
-            logMsg "Logged in to registry, pulling image.. ${sourceName}..."
+            # re-tag the image with the given target name
+            logMsg "Pulled image, re-tag and save as ${targetName}..."
+
             # this is potentially a long running process, show the spinner
-            run "Downloading ${registry}/${sourceName}" \
-                "docker pull ${registry}/${sourceName}" \
+            run "Pulled image, re-tag and save as ${targetName}..." \
+                "docker tag ${registry}/${sourceName} ${targetName} >/dev/null 2>&1 && \
+                docker save ${targetName} | gzip >${destinationFile} && \
+                printMsg "${T_OK_ICON} Success save ${sourceName} as ${targetName} in ${destinationFile} ${T_RESET}" && \
+                logMsg "Success save ${sourceName} as ${targetName} and put in ${destinationFile}" " \
                 ${LOG_FILE}
-
-            if [ $? -eq 0 ]; then
-                # re-tag the image with the given target name
-                logMsg "Pulled image, re-tag and save as ${targetName}..."
-
-                # this is potentially a long running process, show the spinner
-                run "Pulled image, re-tag and save as ${targetName}..." \
-                    "docker tag ${registry}/${sourceName} ${targetName} >/dev/null 2>&1 && \
-                    docker save ${targetName} | gzip >${destinationFile} && \
-                    printMsg "${T_OK_ICON} Success save ${sourceName} as ${targetName} in ${destinationFile} ${T_RESET}" && \
-                    logMsg "Success save ${sourceName} as ${targetName} and put in ${destinationFile}" " \
-                    ${LOG_FILE}
-            else
-                printDatedErrMsg "Problem pulling ${sourceName} from registry ${registry}"
-                logMsg "ERROR Problem pulling ${sourceName} from registry ${registry}"
-                exit 1
-            fi
         else
-            printDatedErrMsg "Problem on login to registry ${registry}"
-            logMsg "ERROR Problem on login to registry ${registry}"
+            printDatedErrMsg "Problem pulling ${sourceName} from registry ${registry}"
+            logMsg "ERROR Problem pulling ${sourceName} from registry ${registry}"
             exit 1
         fi
+    else
+        printDatedErrMsg "Problem on login to registry ${registry}"
+        logMsg "ERROR Problem on login to registry ${registry}"
+        exit 1
     fi
 }
 
@@ -201,35 +204,35 @@ downloadPublicDockerImage() {
     # make sure the destinationDirectory exists
     makeDirectory $(dirname "${destinationFile}")
 
-    #determine if we have the image already
+    # Note if we have the image already
     docker inspect ${targetName} >/dev/null 2>&1
     if [ $? -eq 0 ]; then
         # we already have the image so skip it
-        logMsg "Desired image ${targetName} exists${T_RESET}, skipping..."
-        printMsg "${T_OK_ICON} Desired image ${targetName} exists, ${C_YELLOW}skipping...${T_RESET}"
-    else
-        # pull the image
+        logMsg "Desired image ${targetName} exists${T_RESET}"
+        printMsg "${T_OK_ICON} Desired image ${targetName} exists${T_RESET}"
+    fi
+
+    # pull the image
+    # this is potentially a long running process, show the spinner
+    run "Downloading ${sourceName}" \
+        "docker pull ${sourceName}" \
+        ${LOG_FILE}
+
+    if [ $? -eq 0 ]; then
+        # re-tag the image with the given target name
+        logMsg "Pulled image, re-tag and save as ${targetName}..."
+
         # this is potentially a long running process, show the spinner
-        run "Downloading ${sourceName}" \
-            "docker pull ${sourceName}" \
+        run "Pulled image, re-tag and save as ${targetName}..." \
+            "docker tag ${sourceName} ${targetName} >/dev/null 2>&1 && \
+                docker save ${targetName} | gzip >${destinationFile} && \
+                printMsg "${T_OK_ICON} Success save ${sourceName} as ${targetName} in ${destinationFile} ${T_RESET}" && \
+                logMsg "Success save ${sourceName} as ${targetName} and put in ${destinationFile}" " \
             ${LOG_FILE}
-
-        if [ $? -eq 0 ]; then
-            # re-tag the image with the given target name
-            logMsg "Pulled image, re-tag and save as ${targetName}..."
-
-            # this is potentially a long running process, show the spinner
-            run "Pulled image, re-tag and save as ${targetName}..." \
-                "docker tag ${sourceName} ${targetName} >/dev/null 2>&1 && \
-                    docker save ${targetName} | gzip >${destinationFile} && \
-                    printMsg "${T_OK_ICON} Success save ${sourceName} as ${targetName} in ${destinationFile} ${T_RESET}" && \
-                    logMsg "Success save ${sourceName} as ${targetName} and put in ${destinationFile}" " \
-                ${LOG_FILE}
-        else
-            printDatedErrMsg "Problem pulling ${sourceName}"
-            logMsg "ERROR Problem pulling ${sourceName}"
-            exit 1
-        fi
+    else
+        printDatedErrMsg "Problem pulling ${sourceName}"
+        logMsg "ERROR Problem pulling ${sourceName}"
+        exit 1
     fi
 }
 
@@ -241,7 +244,7 @@ downloadBaseOSFile() {
     local target_dir="/srv/tftp/images/${profileName}"
 
     run "${message}" \
-        "docker run --rm -v ${TFTP_IMAGES}/${profileName}:/tmp/files -w /tmp/files rni-wget wget ${url} -c -O ${filename}" \
+        "docker run --rm ${DOCKER_RUN_ARGS} -v ${TFTP_IMAGES}/${profileName}:/tmp/files -w /tmp/files builder-wget wget ${url} -c -O ${filename}" \
         ${LOG_FILE}
 }
 
@@ -255,12 +258,12 @@ downloadPublicFile() {
     if [[ -z "${token}" || ${token} == "None" ]]; then
         # If the token is not given, don't supply any token headers
         run "${message}" \
-            "docker run --rm -v ${directory}:/tmp/files -w /tmp/files rni-wget wget ${source} -c -O ${fileName}" \
+            "docker run --rm ${DOCKER_RUN_ARGS} -v ${directory}:/tmp/files -w /tmp/files builder-wget wget ${source} -c -O ${fileName}" \
             ${LOG_FILE}
     else
         # The token is defined, so supply the token headers
         run "${message}" \
-            "docker run --rm -v ${directory}:/tmp/files -w /tmp/files rni-wget wget --header 'Authorization: token ${token}' ${source} -c -O ${fileName}" \
+            "docker run --rm ${DOCKER_RUN_ARGS} -v ${directory}:/tmp/files -w /tmp/files builder-wget wget --header 'Authorization: token ${token}' ${source} -c -O ${fileName}" \
             ${LOG_FILE}
     fi
 }
@@ -281,6 +284,6 @@ downloadS3File() {
     AWS_ACCESS_KEY_ID=${accessKey} \
     AWS_SECRET_ACCESS_KEY=${secretKey} \
     run "${message}" \
-        "docker run --rm --env AWS_ACCESS_KEY_ID=${accessKey} --env AWS_SECRET_ACCESS_KEY=${secretKey} --env AWS_DEFAULT_REGION=${region} -v ${directory}:/tmp/files rni-aws-cli aws s3api get-object --bucket ${bucket} --key ${key} /tmp/files/${fileName}" \
+        "docker run --rm ${DOCKER_RUN_ARGS} --env AWS_ACCESS_KEY_ID=${accessKey} --env AWS_SECRET_ACCESS_KEY=${secretKey} --env AWS_DEFAULT_REGION=${region} -v ${directory}:/tmp/files builder-aws-cli aws s3api get-object --bucket ${bucket} --key ${key} /tmp/files/${fileName}" \
         ${LOG_FILE}
 }

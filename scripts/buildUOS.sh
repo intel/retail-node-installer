@@ -14,16 +14,16 @@ set -u
 cd dockerfiles/uos
 printDatedMsg "This can take a few minutes..."
 run "(1/10) Downloading and preparing the kernel" \
-    "docker build --rm -t alpine/kernel:v3.9 --build-arg ALPINELINUX_RELEASE=v3.9 -f ./Dockerfile.alpine ." \
+    "docker build --rm ${DOCKER_BUILD_ARGS} -t alpine/kernel:v3.9 --build-arg ALPINELINUX_RELEASE=v3.9 -f ./Dockerfile.alpine ." \
     ${LOG_FILE}
 run "(2/10) Downloading and preparing the initrd" \
-    "docker build --rm -t rni/dyninit:v1.0 -f ./Dockerfile.dyninit ." \
+    "docker build --rm ${DOCKER_BUILD_ARGS} -t builder/dyninit:v1.0 -f ./Dockerfile.dyninit ." \
     ${LOG_FILE}
 run "(3/10) Compiling tools" \
-    "docker build --rm -t uosbuilder -f ./Dockerfile ." \
+    "docker build --rm ${DOCKER_BUILD_ARGS} -t uosbuilder -f ./Dockerfile ." \
     ${LOG_FILE}
 run "(4/10) Building UOS" \
-    "docker run -t --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd):/uos uosbuilder -c \"cd /linuxkit && make && cd /uos && /linuxkit/bin/linuxkit build -format kernel+initrd uos.yml\"" \
+    "docker run -t --rm ${DOCKER_RUN_ARGS} -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd):/uos uosbuilder -c \"cd /linuxkit && make && cd /uos && /linuxkit/bin/linuxkit build -format kernel+initrd uos.yml\"" \
     ${LOG_FILE}
 run "(5/10) Prepping initrd" \
     "./prepInitrd.sh 2>&1" \
@@ -44,7 +44,7 @@ if [[ "${UOS_CLEAN}" == true ]]; then
         ${LOG_FILE}
 
     run "(10/10) Cleaning up builder image" \
-        "docker rmi uosbuilder:latest rni/dyninit:v1.0" \
+        "docker rmi uosbuilder:latest builder/dyninit:v1.0" \
         ${LOG_FILE}
 else
     printMsg "Skipping (9/10) Cleaning up linuxkit images"

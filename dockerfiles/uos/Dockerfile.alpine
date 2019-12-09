@@ -17,7 +17,7 @@ RUN apk update && apk add --no-cache \
     kmod \
     rpm \
     tar \
-    wget 
+    wget
 
 WORKDIR /build
 RUN mkdir /out

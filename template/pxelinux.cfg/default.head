@@ -8,7 +8,7 @@ TIMEOUT 200
 TOTALTIMEOUT 6000
 
 MENU RESOLUTION 800 600
-MENU TITLE | Retail Node Installer |
+MENU TITLE | Build Options |
 MENU WIDTH 100
 MENU MARGIN 10
 MENU PASSWORDMARGIN 3
@@ -27,7 +27,7 @@ MENU VSHIFT 0
 # Default to the first boot option if there is a timeout
 ONTIMEOUT 1
 
-MENU BACKGROUND rni_bg.png
+MENU BACKGROUND pxe_bg.png
 MENU COLOR screen      0  #808b8b8b #00000000 std
 MENU COLOR border      0  #ffffffff #ee000000 std
 MENU COLOR title       0  #ff6bbfff #ee000000 std
