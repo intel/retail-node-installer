@@ -188,9 +188,7 @@ under [Installation](#installation)
 ## Known Limitations
 
 * The `conf/config.yml` file must specify ALL values comprehensively, as shown in the `conf/config.sample.yml`. Please use `""` for empty values.
-* The `ssh` protocol for cloning git repositories is not currently supported. Please provide a `git_remote_url` that uses the HTTPS protocol.
 * IPv6 is not supported.
-* Using a GitHub token or password is currently the only method of authenticating with git. SSH keys are not currently supported.
 * Retail Node Installer must be run on a Linux-native file system, such as `ext4`. Filesystems that cannot properly preserve file permissions are not supported.
 * On some distributions of Linux (such as newer versions of Ubuntu 18.04), `systemd-resolved` is already running a DNS server on `localhost`. This will cause the Retail Node installer to fail to start due to port binding conflicts. To fix this:
   * Run `./build.sh` normally. It will fail at the final deployment step.
