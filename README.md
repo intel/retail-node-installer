@@ -165,9 +165,25 @@ Any file with the suffix `.rnitemplate` in a profile will support all of the abo
 
 * `@@PROFILE_NAME@@`
 
+### Profile Build Scripts
+
+A profile can contain a `build.sh` script (must have executable flags set) that will be executed locally on the builder host before anything else. Templating is also supported, so `build.sh.buildertemplate` files will be processed (as described in the [Templating](#templating) section) and then executed on the builder host itself.
+
+These `build.sh` scripts can be useful for any sort of pre-processing task. One use case might be to download a `.tar.gz` file that contains and `initrd` and `linux` kernel files, extract them, and then host them locally so that the builder host can process them.
+
 ### File Downloads and Dependencies
 
 A profile will likely require external files in order to boot and install. This is solved by specifying them in `conf/files.yml` _inside the profile repository_, **not in Retail Node Installer itself**. For an example, please see the `files.yml.sample` in the Rancher profile.
+
+### Custom Profiles
+
+* A custom profile can be developed and used with existing base profiles.
+  * Base profile will have core logic of installing OS. Please see `pre.sh` script in ClearLinux profile on `base` branch.
+  * Base profile will also `post.sh` script for clean up activities. Please see `post.sh` script in ClearLinux profile on `base` branch.
+  * Custom profile can have `profile.sh` to support custom features. Please see `profile.sh` script in ClearLinux profile on `rwo` branch.
+  * Finally custom profile will have `bootstrap.sh` which will eventually call `pre.sh` from *base* branch, `profile.sh` from *custom* branch and then call `post.sh` from *base* branch again. Please see `bootstrap.sh` script in ClearLinux profile on `rwo` branch.
+* To see more details on how to change Edgebuilder configuration to use custom profile, see *step 2*
+under [Installation](#installation)
 
 ## Known Limitations
 
@@ -184,3 +200,12 @@ A profile will likely require external files in order to boot and install. This 
   * Test that network connectivity works.
   * Proceed to deploy your target devices.
 * Retail Node Installer's usage of `aws-cli` can cause keyring issues on desktop versions of Linux. Consider disabling your distro's keyring service, or alternatively, a headless distribution such as Ubuntu server edition will resolve the issue.
+## Other Info
+
+User can build behind a proxy like this:
+
+```bash
+export HTTP_PROXY=http://proxy.site.com:1234 && \
+export HTTPS_PROXY=http://proxy.site.com:1234 && \
+./build.sh
+```
