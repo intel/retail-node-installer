@@ -110,14 +110,6 @@ run "Building builder-dnsmasq" \
     "docker build -q -t builder-dnsmasq dockerfiles/dnsmasq" \
     ${LOG_FILE}
 
-# Pull the required images for running our application
-# Ignore pull failures because "docker-compose pull" does not gracefully
-# handle images that are built and tagged locally. This step is more of a
-# nice-to-have, since running "run.sh" will attempt to pull the images anyways.
-run "Pulling images" \
-    "docker-compose pull --ignore-pull-failures --parallel" \
-    ${LOG_FILE}
-
 # Synchronize profiles. This step encapsulates a lot of profile-specific
 # actions, such as cloning a profile repository, downloading the
 # files for a profile, rendering templates for a profile, etc.
