@@ -92,22 +92,22 @@ printBanner "Building ${C_GREEN}Images..."
 
 # Build the aws-cli image
 run "Building builder-aws-cli" \
-    "docker build -q -t builder-aws-cli dockerfiles/aws-cli" \
+    "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-aws-cli dockerfiles/aws-cli" \
     ${LOG_FILE}
 
 # Build the wget image
 run "Building builder-wget" \
-    "docker build -q -t builder-wget dockerfiles/wget" \
+    "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-wget dockerfiles/wget" \
     ${LOG_FILE}
 
 # Build the git image
 run "Building builder-git" \
-    "docker build -q -t builder-git dockerfiles/git" \
+    "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-git dockerfiles/git" \
     ${LOG_FILE}
 
 # Build the dnsmasq image
 run "Building builder-dnsmasq" \
-    "docker build -q -t builder-dnsmasq dockerfiles/dnsmasq" \
+    "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-dnsmasq dockerfiles/dnsmasq" \
     ${LOG_FILE}
 
 # Synchronize profiles. This step encapsulates a lot of profile-specific

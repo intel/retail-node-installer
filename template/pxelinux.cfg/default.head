@@ -46,3 +46,7 @@ MENU COLOR pwdborder   0  #80ffffff #20ffffff std
 MENU COLOR pwdheader   0  #80ff8080 #20ffffff std
 MENU COLOR pwdentry    0  #80ffffff #20ffffff std
 MENU COLOR help        0  #c0ffffff #00000000 std
+
+LABEL local
+    MENU LABEL Boot local hard drive
+    LOCALBOOT -1
