@@ -96,7 +96,7 @@ profiles:
     profile_base_branch: master
     git_username: ""
     git_token: ""
-    name: clearlinux_profile
+    name: clearlinux-desktop_profile
     custom_git_arguments: --depth=1
 
 ```
