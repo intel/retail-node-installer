@@ -23,7 +23,7 @@ network_dns_secondary: 8.8.8.8
 # are empty. Otherwise, this application will not be configured properly.
 profiles:
   - git_remote_url: https://github.com/intel/rni-profile-base-clearlinux.git
-    profile_branch: master
+    profile_branch: legacy
     profile_base_branch: None
     git_username: ""
     git_token: ""
