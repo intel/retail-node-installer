@@ -84,8 +84,16 @@ host_ip: 192.168.1.11
 
 profiles:
   - git_remote_url: https://github.com/intel/rni-profile-base-clearlinux.git
-    profile_branch: master
+    profile_branch: legacy
     profile_base_branch: None
+    git_username: ""
+    git_token: ""
+    name: clearlinux_profile
+    custom_git_arguments: --depth=1
+    
+  - git_remote_url: https://github.com/intel/rni-profile-base-clearlinux.git
+    profile_branch: desktop
+    profile_base_branch: master
     git_username: ""
     git_token: ""
     name: clearlinux_profile
