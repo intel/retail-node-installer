@@ -10,6 +10,10 @@ The main executable to setup a device as a Retail Node Installer is `build.sh`. 
 
   - **nginx**
 
+  - **squid** - optional, used for caching http requests
+
+  - **registry** - optional, used for caching Docker images
+
 [RancherOS](https://github.com/intel/rni-profile-base-rancheros), [Clear Linux](https://github.com/intel/rni-profile-base-clearlinux) and [Ubuntu](https://github.com/intel/rni-profile-base-ubuntu) are provided as example profiles.
 
 This document will guide you through the following:
@@ -80,8 +84,16 @@ host_ip: 192.168.1.11
 
 profiles:
   - git_remote_url: https://github.com/intel/rni-profile-base-clearlinux.git
-    profile_branch: master
+    profile_branch: legacy
     profile_base_branch: None
+    git_username: ""
+    git_token: ""
+    name: clearlinux_profile
+    custom_git_arguments: --depth=1
+    
+  - git_remote_url: https://github.com/intel/rni-profile-base-clearlinux.git
+    profile_branch: desktop
+    profile_base_branch: master
     git_username: ""
     git_token: ""
     name: clearlinux_profile
@@ -165,18 +177,32 @@ Any file with the suffix `.rnitemplate` in a profile will support all of the abo
 
 * `@@PROFILE_NAME@@`
 
+### Profile Build Scripts
+
+A profile can contain a `build.sh` script (must have executable flags set) that will be executed locally on the builder host before anything else. Templating is also supported, so `build.sh.buildertemplate` files will be processed (as described in the [Templating](#templating) section) and then executed on the builder host itself.
+
+These `build.sh` scripts can be useful for any sort of pre-processing task. One use case might be to download a `.tar.gz` file that contains and `initrd` and `linux` kernel files, extract them, and then host them locally so that the builder host can process them.
+
 ### File Downloads and Dependencies
 
 A profile will likely require external files in order to boot and install. This is solved by specifying them in `conf/files.yml` _inside the profile repository_, **not in Retail Node Installer itself**. For an example, please see the `files.yml.sample` in the Rancher profile.
 
+### Custom Profiles
+
+* A custom profile can be developed and used with existing base profiles.
+  * Base profile will have core logic of installing OS. Please see `pre.sh` script in ClearLinux profile on `base` branch.
+  * Base profile will also `post.sh` script for clean up activities. Please see `post.sh` script in ClearLinux profile on `base` branch.
+  * Custom profile can have `profile.sh` to support custom features. Please see `profile.sh` script in ClearLinux profile on `rwo` branch.
+  * Finally custom profile will have `bootstrap.sh` which will eventually call `pre.sh` from *base* branch, `profile.sh` from *custom* branch and then call `post.sh` from *base* branch again. Please see `bootstrap.sh` script in ClearLinux profile on `rwo` branch.
+* To see more details on how to change Edgebuilder configuration to use custom profile, see *step 2*
+under [Installation](#installation)
+
 ## Known Limitations
 
 * The `conf/config.yml` file must specify ALL values comprehensively, as shown in the `conf/config.sample.yml`. Please use `""` for empty values.
-* The `ssh` protocol for cloning git repositories is not currently supported. Please provide a `git_remote_url` that uses the HTTPS protocol.
 * IPv6 is not supported.
-* Using a GitHub token or password is currently the only method of authenticating with git. SSH keys are not currently supported.
 * Retail Node Installer must be run on a Linux-native file system, such as `ext4`. Filesystems that cannot properly preserve file permissions are not supported.
-* On some distributions of Linux (such as newer versions of Ubuntu 18.04), `systemd-resolved` is already running a DNS server on `localhost`. This will cause the Retail Node installer to fail to start due to port binding conflicts. To fix this:
+* On some distributions of Linux (such as newer versions of Ubuntu 18.04), `systemd-resolved` is already running a DNS server on `localhost`. This will cause the dnsmasq container (which is required) to fail to start due to port binding conflicts. To fix this:
   * Run `./build.sh` normally. It will fail at the final deployment step.
   * Edit `/etc/systemd/resolved.conf` to include the line `DNSStubListener=no`
   * **This step will cause your network connection to drop.** Run `sudo systemctl daemon-reload && sudo systemctl restart systemd-resolved.service`
@@ -184,3 +210,13 @@ A profile will likely require external files in order to boot and install. This 
   * Test that network connectivity works.
   * Proceed to deploy your target devices.
 * Retail Node Installer's usage of `aws-cli` can cause keyring issues on desktop versions of Linux. Consider disabling your distro's keyring service, or alternatively, a headless distribution such as Ubuntu server edition will resolve the issue.
+
+## Other Info
+
+You can build behind a proxy like this:
+
+```bash
+export HTTP_PROXY=http://proxy.site.com:1234 && \
+export HTTPS_PROXY=http://proxy.site.com:1234 && \
+./build.sh
+```
