@@ -38,7 +38,7 @@ services:
     image: registry:2
     restart: always
     ports:
-      - 5000:5000
+      - 5557:5000
     volumes:
       - ./template/registry/registry.yml:/config.yml
       - /var/lib/registry:/var/lib/registry

@@ -5,7 +5,7 @@ FROM alpine:3.9 as pxeFileProvider
 RUN apk --no-cache add syslinux
 
 FROM alpine:3.9
-RUN apk --no-cache add dnsmasq
+RUN apk --no-cache add dnsmasq nmap nmap-scripts
 RUN mkdir -p /srv/tftp/efi64
 
 # Legacy BIOS syslinux binaries

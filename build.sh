@@ -28,17 +28,21 @@ printHelp() {
 
 UOS_CLEAN="false"
 BUILD_UOS="true"
+BUILD_IMAGES="true"
 SKIP_FILES="false"
 SKIP_BACKUPS="false"
+SKIP_PROFILES="false"
 SKIP_PROFILE_BUILDS="false"
 for var in "$@"; do
     case "${var}" in
-        "-c" | "--clean-uos"       )    UOS_CLEAN="true";;
-        "-s" | "--skip-build-uos"  )    BUILD_UOS="false";;
-        "-F" | "--skip-files"      )    SKIP_FILES="true";;
-        "-b" | "--skip-backups"    )    SKIP_BACKUPS="true";;
-        "-B" | "--skip-builds"     )    SKIP_PROFILE_BUILDS="true";;
-        "-h" | "--help"            )    printHelp;;
+        "-c" | "--clean-uos"           )    UOS_CLEAN="true";;
+        "-s" | "--skip-build-uos"      )    BUILD_UOS="false";;
+        "-S" | "--skip-image-builds"   )    BUILD_IMAGES="false";;
+        "-F" | "--skip-files"          )    SKIP_FILES="true";;
+        "-b" | "--skip-backups"        )    SKIP_BACKUPS="true";;
+        "-p" | "--skip-profile-builds" )    SKIP_PROFILE_BUILDS="true";;
+        "-P" | "--skip-profiles"       )    SKIP_PROFILES="true";;
+        "-h" | "--help"                )    printHelp;;
     esac
 done
 
@@ -57,12 +61,6 @@ logMsg "Checking Config..."
 parseConfig
 
 source "scripts/templateutils.sh"
-printBanner "Checking ${C_GREEN}Network Config..."
-logMsg "Checking Network Config..."
-# This function will ensure that the config options for
-# network options that users can specify in conf/config.yml
-# are set to _something_ non-empty.
-verifyNetworkConfig
 
 # Incorporate proxy preferences
 if [ "${HTTP_PROXY+x}" != "" ]; then
@@ -76,7 +74,7 @@ else
 fi
 
 # Build Utility OS, if desired
-if [[ "${BUILD_UOS}" == "true" ]]; then
+if [[ "${BUILD_UOS}" == "true" ]] && [[ "${BUILD_IMAGES}" == "true" ]]; then
     printBanner "Building ${C_GREEN}Utility OS (UOS)..."
     logMsg "Building Utility OS (UOS)..."
     source "scripts/buildUOS.sh"
@@ -84,43 +82,67 @@ else
     logMsg "Skipping Build of UOS"
 fi
 
-printBanner "Building ${C_GREEN}Images..."
+if [[ "${BUILD_IMAGES}" == "true" ]]; then
+    printBanner "Building ${C_GREEN}Images..."
 
-# Begin to build a few Docker images. A few of these images are utility
-# images such as wget, git, and aws-cli. Using Docker for these utilities
-# reduces the footprint of our application.
+    # Begin to build a few Docker images. A few of these images are utility
+    # images such as wget, git, and aws-cli. Using Docker for these utilities
+    # reduces the footprint of our application.
 
-# Build the aws-cli image
-run "Building builder-aws-cli" \
-    "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-aws-cli dockerfiles/aws-cli" \
-    ${LOG_FILE}
+    # Build the aws-cli image
+    run "Building builder-aws-cli" \
+        "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-aws-cli dockerfiles/aws-cli" \
+        ${LOG_FILE}
 
-# Build the wget image
-run "Building builder-wget" \
-    "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-wget dockerfiles/wget" \
-    ${LOG_FILE}
+    # Build the wget image
+    run "Building builder-wget" \
+        "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-wget dockerfiles/wget" \
+        ${LOG_FILE}
 
-# Build the git image
-run "Building builder-git" \
-    "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-git dockerfiles/git" \
-    ${LOG_FILE}
+    # Build the git image
+    run "Building builder-git" \
+        "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-git dockerfiles/git" \
+        ${LOG_FILE}
 
-# Build the dnsmasq image
-run "Building builder-dnsmasq" \
-    "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-dnsmasq dockerfiles/dnsmasq" \
-    ${LOG_FILE}
+    # Build the dnsmasq image
+    run "Building builder-dnsmasq" \
+        "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-dnsmasq dockerfiles/dnsmasq" \
+        ${LOG_FILE}
+else
+    logMsg "Skipping Build of Images"
+fi
+
+printBanner "Checking ${C_GREEN}Network Config..."
+logMsg "Checking Network Config..."
+# This function will ensure that the config options for
+# network options that users can specify in conf/config.yml
+# are set to _something_ non-empty.
+verifyNetworkConfig
 
 # Synchronize profiles. This step encapsulates a lot of profile-specific
 # actions, such as cloning a profile repository, downloading the
 # files for a profile, rendering templates for a profile, etc.
-printBanner "Synchronizing ${C_GREEN}Profiles..."
 source "scripts/profileutils.sh"
 source "scripts/pxemenuutils.sh"
-syncProfiles
+if [[ "${SKIP_PROFILES}" == "false" ]]; then
+    printBanner "Synchronizing ${C_GREEN}Profiles..."
+    syncProfiles
+else
+    logMsg "Skipping Profile Sync"
+fi
 
 # This next step will propagate the network configuration that was determined
 # at the beginning of this script to dnsmasq.conf and the PXE menu
 printBanner "Rendering ${C_GREEN}System Templates..."
+
+# Begin the process of generating a temporary
+# pxelinux.cfg/default file
+printBanner "\nGenerating ${C_GREEN}PXE Menu..."
+logMsg "Generating PXE Menu"
+genPxeMenuHead
+profilesActions genProfilePxeMenu
+genPxeMenuTail
+
 renderSystemNetworkTemplates
 updatePxeMenu
 

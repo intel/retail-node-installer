@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Retail Node Installer (RNI) is a collection of scripts that enables network-wide [PXE](https://docs.oracle.com/cd/E24628_01/em.121/e27046/appdx_pxeboot.htm#EMLCM12198) booting of customizable operating systems, referred to as "profiles". It has a lightweight footprint, requiring only Bash, Docker, and Docker Compose. Profiles can be any typical Linux distribution, such as RancherOS, Ubuntu, Clear Linux.
+The Retail Node Installer (RNI) is a collection of scripts that enables network-wide [PXE](https://en.wikipedia.org/wiki/Preboot_Execution_Environment) booting of customizable operating systems, referred to as "profiles". It has a lightweight footprint, requiring only Bash, Docker, and Docker Compose. Profiles can be any typical Linux distribution, such as RancherOS, Ubuntu, Clear Linux.
 
 The main executable to setup a device as a Retail Node Installer is `build.sh`. This script will automatically build a few Docker images, download necessary files as required by profiles, prepare the PXE boot menu, and launch the following dockerized services:
 
@@ -14,13 +14,15 @@ The main executable to setup a device as a Retail Node Installer is `build.sh`. 
 
   - **registry** - optional, used for caching Docker images
 
-[RancherOS](https://github.com/intel/rni-profile-base-rancheros), [Clear Linux](https://github.com/intel/rni-profile-base-clearlinux) and [Ubuntu](https://github.com/intel/rni-profile-base-ubuntu) are provided as example profiles.
+[Clear Linux](https://github.com/intel/rni-profile-base-clearlinux), [Ubuntu](https://github.com/intel/rni-profile-base-ubuntu) and [RancherOS](https://github.com/intel/rni-profile-base-rancheros) are provided as example profiles.
 
 This document will guide you through the following:
 
 1. [Prerequisites](#prerequisites)
 
 1. [Setting up your Network](#network-setup)
+
+1. [Quick Installation Guide](#quick-installation-guide)
 
 1. [Installing the Retail Node Installer (RNI)](#installing-the-rni)
 
@@ -32,22 +34,61 @@ This document will guide you through the following:
 
 The following is required:
 
-* **Profile** - The git URL for at least one profile is required. You will be asked to paste the URL into the configuration file in the following instructions.
+* **Profile** - The git URL for at least one profile is required. You will be asked to paste the URL into the configuration file in the following instructions. [Clear Linux](https://github.com/intel/rni-profile-base-clearlinux), [Ubuntu](https://github.com/intel/rni-profile-base-ubuntu) and [RancherOS](https://github.com/intel/rni-profile-base-rancheros) are provided as example profiles.
 
 * **Retail Node Installer** - Minimum Recommended Hardware or VM with 2 CPUs, 20GB HD and 2GB of RAM, running any Linux Distro (headless recommended) that supports Docker
   * `docker` 18.09.3 or greater
   * `docker-compose` v1.23.2 or greater (use [the official installation guide](https://docs.docker.com/compose/install/))
   * `bash` v4.3.48 or greater
 
-* **Target Device(s)** - Bare-Metal or Virtual Machine(s) with the necessary specifications for your use case. The profile defines what will we be installed on the Target Device. _Note: The Target Devices will be wiped clean during typical usage of the Retail Node Installer._
+* **Target Device(s)** - Bare-Metal or Virtual Machine(s) with the necessary specifications for your use case. The profile defines what will we be installed and detects hardware on the Target Device. _Note: The Target Devices will be wiped clean during typical usage of the Retail Node Installer._
 
 ## Network Setup
 
-The Retail Node Installer must have a static IPv4 address. Additionally, Retail Node Installer must be the only DHCP server on the network. This means that any existing routers/gateway/switches that are acting as DHCP servers must have their DHCP-serving functionality disabled.
+The Retail Node Installer (RNI) must be in an isolated network and there must only be one RNI in the network.  RNI will detect if there is an existing DHCP or DNS and will configure itself accordingly.  It will also detect if the host has a static or dynamic IP IPv4 address.  If the host is a dynamic IP address and if the IP address changes you must run `./build.sh -S -P && ./run.sh --restart` to update RNI configuration with the new IP address.
+
+WARNING: DO NOT RUN RNI ON YOUR CORPORATE NETWORK. *It must be on an isoloated network.*
+
+NOTE: When testing with virtual machines, their LAN adapters should be put in Bridge Mode or the VMs must be within the same virtual network.
+
+The ideal setup is a router with an Internet connection and an x86 device like an Intel NUC or VM with Bridge Mode enabled on the LAN adapter.
+
+![Network Diagram](./images/net_diag.png "Network Diagram")
 
 Because RNI is OS-agnostic and Docker-based, the configuration of your system's network is not something that this guide will cover.
 
 Target Devices will be connected on the same LAN as the Retail Node Installer. On target devices, enable PXE Boot in the BIOS if it is not enabled. Most BIOS's have a boot menu option (F12) at POST time. Typically you can press (F12) to alter the boot sequence.
+
+## Quick Installation Guide
+
+  NOTE: Please read [Netowrk Setup](#network-setup) above before proceeding.
+
+  1. Install Docker Compose
+  ```bash
+  mkdir -p /usr/local/bin
+  wget -O /usr/local/bin/docker-compose "https://github.com/docker/compose/releases/download/1.25.4/docker-compose-$(uname -s)-$(uname -m)"
+  chmod a+x /usr/local/bin/docker-compose
+  ```
+  
+  2. Clone this project to /opt/rni
+  ```bash
+  cd /opt
+  git clone -b master https://github.com/intel/retail-node-installer.git rni
+  cd rni
+  ```
+
+  3. Build the RNI services. This will take about 5 to 10 minutes.
+  ```bash
+  ./build.sh
+  ```
+
+  4. Start the RNI services.
+  ```bash
+  ./run.sh
+  ```
+
+  5. Attach to the target system or VM to the same network as RNI.  Turn it on and make sure PXE is enabled in the BIOS or press F12 or F11 at boot to boot from network.  You will see the following screen.
+  ![PXE Menu](./images/pxe_menu.png "PXE Menu")
 
 ## Installing the RNI
 
@@ -58,13 +99,13 @@ Once the prerequisites and network setup have been taken care of, the steps to d
 Clone the Retail Node Installer repository using your git protocol of choice, and navigate into the cloned directory - use the following code snippet as an example:
 
 ```bash
-git clone -b master https://github.com/intel/retail-node-installer.git retail-node-installer
-cd retail-node-installer
+git clone -b master https://github.com/intel/retail-node-installer.git rni
+cd rni
 ```
 
 **Step 2.**
 
-Copy `conf/config.sample.yml` to `conf/config.yml`:
+Edit the existing `conf/config.yml` or copy `conf/config.sample.yml` to `conf/config.yml`:
 
 ```bash
 cp conf/config.sample.yml conf/config.yml
@@ -75,12 +116,13 @@ The config file can look something like this - **please modify the values below,
 ```yaml
 ---
 
-dhcp_range_minimum: 192.168.1.100
-dhcp_range_maximum: 192.168.1.250
-network_broadcast_ip: 192.168.1.255
-network_gateway_ip: 192.168.1.1
-network_dns_secondary: 8.8.8.8
-host_ip: 192.168.1.11
+#dhcp_range_minimum: 192.168.1.100
+#dhcp_range_maximum: 192.168.1.250
+#network_broadcast_ip: 192.168.1.255
+#network_gateway_ip: 192.168.1.1
+#network_dns_primary: 8.8.4.4
+#network_dns_secondary: 8.8.8.8
+#Whost_ip: 192.168.1.11
 
 profiles:
   - git_remote_url: https://github.com/intel/rni-profile-base-clearlinux.git
@@ -171,6 +213,7 @@ In a profile's `conf/config.yml`, for the `kernel_arguments` variable only, the 
 * `@@NETWORK_BROADCAST_IP@@` - `network_broadcast_ip`
 * `@@NETWORK_GATEWAY_IP@@` - `network_gateway_ip`
 * `@@HOST_IP@@` - `host_ip`
+* `@@NETWORK_DNS_PRIMARY@@` - `network_dns_primary`
 * `@@NETWORK_DNS_SECONDARY@@` - `network_dns_secondary`
 
 Any file with the suffix `.rnitemplate` in a profile will support all of the above as well as:

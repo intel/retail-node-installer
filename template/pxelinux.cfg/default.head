@@ -25,7 +25,7 @@ MENU HSHIFT 0
 MENU VSHIFT 0
 
 # Default to the first boot option if there is a timeout
-ONTIMEOUT 1
+ONTIMEOUT local
 
 MENU BACKGROUND pxe_bg.png
 MENU COLOR screen      0  #808b8b8b #00000000 std

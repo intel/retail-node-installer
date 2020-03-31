@@ -716,12 +716,4 @@ syncProfiles() {
 
     # Now we need to download files associated with the profile
     profilesActions downloadProfile
-
-    # Begin the process of generating a temporary
-    # pxelinux.cfg/default file
-    printBanner "\nGenerating ${C_GREEN}PXE Menu..."
-    logMsg "Generating PXE Menu"
-    genPxeMenuHead
-    profilesActions genProfilePxeMenu
-    genPxeMenuTail
 }

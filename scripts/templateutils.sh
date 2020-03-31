@@ -14,44 +14,74 @@
 # parseConfig
 
 getMyIp() {
-    echo $(ip route get 9.9.9.9 | awk '{for(i=1;i<=NF;i++) if ($i=="src") print $(i+1)}')
+    echo $(ip route get 8.8.8.8 | awk '{for(i=1;i<=NF;i++) if ($i=="src") print $(i+1)}')
+}
+
+getMyDefaultRoute() {
+    echo $(ip route show | grep -i 'default via'| awk '{print $3 }')
+}
+
+getMyBroadcast() {
+    echo $(ip -o -4 addr list $(ip route show 0.0.0.0/0 | awk '{print $5}') | grep brd |  awk '{print $6}')
 }
 
 getMySubnet() {
     echo $(echo $(getMyIp) | awk -F'.' '{print $1,$2,$3}' OFS='.' )
 }
 
+detectDHCP() {
+    local ip=$(docker run -it --rm --net=host --entrypoint="" builder-dnsmasq sh -c 'nmap --script broadcast-dhcp-discover 2> /dev/null | grep Identifier | awk "{print \$4}"' )
+    echo ${ip} | tr -d '\r' 2> /dev/null
+}
+
 # Checks for empty network-related configuration items in
 # the conf/config.yml file and sets defaults if any
 # are not set.
 verifyNetworkConfig() {
+
     local ipAddr=$(getMyIp)
+    local ipRoute=$(getMyDefaultRoute)
+    local broadcast=$(getMyBroadcast)
     local subnet=$(getMySubnet)
+    local DHCPserver=$(detectDHCP)
 
     # Ensure the DHCP range min is set
     if [[ -z "${builder_config_dhcp_range_minimum+x}" ]]; then
         builder_config_dhcp_range_minimum="${subnet}.100"
-        printDatedInfoMsg "Auto-determined dhcp_range_minimum=${builder_config_dhcp_range_minimum}"
+        # printDatedInfoMsg "Auto-determined dhcp_range_minimum=${builder_config_dhcp_range_minimum}"
         logInfoMsg "Using default dhcp_range_minimum=${builder_config_dhcp_range_minimum} - Set dhcp_range_minimum in conf/config.yml and re-run this script if this value is not desired."
     fi
 
     # Ensure the DHCP range max is set
     if [[ -z "${builder_config_dhcp_range_maximum+x}" ]]; then
         builder_config_dhcp_range_maximum="${subnet}.250"
-        printDatedInfoMsg "Auto-determined dhcp_range_maximum=${builder_config_dhcp_range_maximum}"
+        # printDatedInfoMsg "Auto-determined dhcp_range_maximum=${builder_config_dhcp_range_maximum}"
         logInfoMsg "Using default dhcp_range_maximum=${builder_config_dhcp_range_maximum} - Set dhcp_range_maximum in conf/config.yml and re-run this script if this value is not desired."
+    fi
+
+    # Ensure the DHCP range is set
+    if [[ -z "${builder_config_dhcp_range+x}" ]]; then
+        if [[ ${DHCPserver} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] && [[ "${DHCPserver}" != "${ipAddr}" ]]; then
+            builder_config_dhcp_range="${DHCPserver},proxy"
+            builder_config_pxe_comment=""
+        else
+            builder_config_dhcp_range="${builder_config_dhcp_range_minimum},${builder_config_dhcp_range_maximum},6h"
+            builder_config_pxe_comment="#"
+        fi
+        printDatedInfoMsg "Auto-determined dhcp_range=${builder_config_dhcp_range}"
+        logInfoMsg "Using default dhcp_range_minimum=${builder_config_dhcp_range} - Set dhcp_range in conf/config.yml and re-run this script if this value is not desired."
     fi
 
     # Ensure the network's broadcast is set
     if [[ -z "${builder_config_network_broadcast_ip+x}" ]]; then
-        builder_config_network_broadcast_ip="${subnet}.255"
+        builder_config_network_broadcast_ip="${broadcast}"
         printDatedInfoMsg "Auto-determined network_broadcast_ip=${builder_config_network_broadcast_ip}"
         logInfoMsg "Using default network_broadcast_ip=${builder_config_network_broadcast_ip} - Set network_broadcast_ip in conf/config.yml and re-run this script if this value is not desired."
     fi
 
     # Ensure the network's gateway IP is set
     if [[ -z "${builder_config_network_gateway_ip+x}" ]]; then
-        builder_config_network_gateway_ip="${subnet}.1"
+        builder_config_network_gateway_ip="${ipRoute}"
         printDatedInfoMsg "Auto-determined network_gateway_ip=${builder_config_network_gateway_ip}"
         logInfoMsg "Using default network_gateway_ip=${builder_config_network_gateway_ip} - Set network_gateway_ip in conf/config.yml and re-run this script if this value is not desired."
     fi
@@ -68,6 +98,13 @@ verifyNetworkConfig() {
         fi
     fi
 
+    # Ensure the dnsmasq primary DNS is set
+    if [[ -z "${builder_config_network_dns_primary+x}" ]]; then
+        builder_config_network_dns_primary="8.8.4.4"
+        printDatedInfoMsg "Auto-determined network_dns_primary=${builder_config_network_dns_primary}"
+        logInfoMsg "Using default network_dns_primary=${builder_config_network_dns_primary} - Set network_dns_primary in conf/config.yml and re-run this script if this value is not desired."
+    fi
+
     # Ensure the dnsmasq secondary DNS is set
     if [[ -z "${builder_config_network_dns_secondary+x}" ]]; then
         builder_config_network_dns_secondary="8.8.8.8"
@@ -82,7 +119,10 @@ verifyNetworkConfig() {
 renderSystemNetworkTemplates() {
     # Get the IP and subnet of the current system
     local ipAddr=$(getMyIp)
+    local ipRoute=$(getMyDefaultRoute)
     local subnet=$(getMySubnet)
+    local broadcast=$(getMyBroadcast)
+    # local DHCPserver=$(detectDHCP)
 
     # make directories if they don't exist
     local dnsMasqConfDir="data/etc"
@@ -104,10 +144,13 @@ renderSystemNetworkTemplates() {
     # Replace the template variables with their appropriate values
     local dhcpRangeMinimumPlaceholder=("@@DHCP_MIN@@" "@@RNI_DHCP_MIN@@" "@@EDGEBUILDER_DHCP_MIN@@")
     local dhcpRangeMaximumPlaceholder=("@@DHCP_MAX@@" "@@RNI_DHCP_MAX@@" "@@EDGEBUILDER_DHCP_MAX@@")
+    local dhcpRangePlaceholder=("@@DHCP_RANGE@@" "@@RNI_DHCP_RANGE@@" "@@EDGEBUILDER_DHCP_RANGE@@")
     local networkBroadcastIpPlaceholder=("@@NETWORK_BROADCAST_IP@@" "@@RNI_NETWORK_BROADCAST_IP@@" "@@EDGEBUILDER_NETWORK_BROADCAST_IP@@")
     local networkGatewayIpPlaceholder=("@@NETWORK_GATEWAY_IP@@" "@@RNI_NETWORK_GATEWAY_IP@@" "@@EDGEBUILDER_NETWORK_GATEWAY_IP@@")
     local hostipPlaceholder=("@@HOST_IP@@" "@@RNI_IP@@" "@@EDGEBUILDER_IP@@")
+    local networkDnsPrimaryPlaceholder=("@@NETWORK_DNS_PRIMARY@@" "@@RNI_NETWORK_DNS_PRIMARY@@" "@@EDGEBUILDER_NETWORK_DNS_PRIMARY@@")
     local networkDnsSecondaryPlaceholder=("@@NETWORK_DNS_SECONDARY@@" "@@RNI_NETWORK_DNS_SECONDARY@@" "@@EDGEBUILDER_NETWORK_DNS_SECONDARY@@")
+    local pxeCommentPlaceholder=("@@PXE_COMMENT@@" "@@RNI_PXE_COMMENT@@" "@@EDGEBUILDER_PXE_COMMENT@@")
 
     # Replace all the potential variables in the staged files.
     # Note that profile-scoped variables are not accessible here.
@@ -119,10 +162,13 @@ renderSystemNetworkTemplates() {
         do
             sed -i -e "s/${dhcpRangeMinimumPlaceholder[i]}/${builder_config_dhcp_range_minimum}/g" ${stgFile}
             sed -i -e "s/${dhcpRangeMaximumPlaceholder[i]}/${builder_config_dhcp_range_maximum}/g" ${stgFile}
+            sed -i -e "s/${dhcpRangePlaceholder[i]}/${builder_config_dhcp_range}/g" ${stgFile}
             sed -i -e "s/${networkBroadcastIpPlaceholder[i]}/${builder_config_network_broadcast_ip}/g" ${stgFile}
             sed -i -e "s/${networkGatewayIpPlaceholder[i]}/${builder_config_network_gateway_ip}/g" ${stgFile}
             sed -i -e "s/${hostipPlaceholder[i]}/${builder_config_host_ip}/g" ${stgFile}
+            sed -i -e "s/${networkDnsPrimaryPlaceholder[i]}/${builder_config_network_dns_primary}/g" ${stgFile}
             sed -i -e "s/${networkDnsSecondaryPlaceholder[i]}/${builder_config_network_dns_secondary}/g" ${stgFile}
+            sed -i -e "s/${pxeCommentPlaceholder[i]}/${builder_config_pxe_comment}/g" ${stgFile}
         done
         logInfoMsg "Applied network config to ${stgFile}"
     done
@@ -168,9 +214,11 @@ renderTemplate() {
     # Replace the template variables with their appropriate values
     local dhcpRangeMinimumPlaceholder=("@@DHCP_MIN@@" "@@RNI_DHCP_MIN@@" "@@EDGEBUILDER_DHCP_MIN@@")
     local dhcpRangeMaximumPlaceholder=("@@DHCP_MAX@@" "@@RNI_DHCP_MAX@@" "@@EDGEBUILDER_DHCP_MAX@@")
+    local dhcpRangePlaceholder=("@@DHCP_RANGE@@" "@@RNI_DHCP_RANGE@@" "@@EDGEBUILDER_DHCP_RANGE@@")
     local networkBroadcastIpPlaceholder=("@@NETWORK_BROADCAST_IP@@" "@@RNI_NETWORK_BROADCAST_IP@@" "@@EDGEBUILDER_NETWORK_BROADCAST_IP@@")
     local networkGatewayIpPlaceholder=("@@NETWORK_GATEWAY_IP@@" "@@RNI_NETWORK_GATEWAY_IP@@" "@@EDGEBUILDER_NETWORK_GATEWAY_IP@@")
     local hostipPlaceholder=("@@HOST_IP@@" "@@RNI_IP@@" "@@EDGEBUILDER_IP@@")
+    local networkDnsPrimaryPlaceholder=("@@NETWORK_DNS_PRIMARY@@" "@@RNI_NETWORK_DNS_PRIMARY@@" "@@EDGEBUILDER_NETWORK_DNS_PRIMARY@@")
     local networkDnsSecondaryPlaceholder=("@@NETWORK_DNS_SECONDARY@@" "@@RNI_NETWORK_DNS_SECONDARY@@" "@@EDGEBUILDER_NETWORK_DNS_SECONDARY@@")
     local profileNamePlaceholder="@@PROFILE_NAME@@"
 
@@ -179,9 +227,11 @@ renderTemplate() {
     do
         sed -i -e "s/${dhcpRangeMinimumPlaceholder[i]}/${builder_config_dhcp_range_minimum}/g" ${fileName}.modified
         sed -i -e "s/${dhcpRangeMaximumPlaceholder[i]}/${builder_config_dhcp_range_maximum}/g" ${fileName}.modified
+        sed -i -e "s/${dhcpRangePlaceholder[i]}/${builder_config_dhcp_range}/g" ${fileName}.modified
         sed -i -e "s/${networkBroadcastIpPlaceholder[i]}/${builder_config_network_broadcast_ip}/g" ${fileName}.modified
         sed -i -e "s/${networkGatewayIpPlaceholder[i]}/${builder_config_network_gateway_ip}/g" ${fileName}.modified
         sed -i -e "s/${hostipPlaceholder[i]}/${builder_config_host_ip}/g" ${fileName}.modified
+        sed -i -e "s/${networkDnsPrimaryPlaceholder[i]}/${builder_config_network_dns_primary}/g" ${fileName}.modified
         sed -i -e "s/${networkDnsSecondaryPlaceholder[i]}/${builder_config_network_dns_secondary}/g" ${fileName}.modified
     done
     sed -i -e "s/${profileNamePlaceholder}/${profileName}/g" ${fileName}.modified
