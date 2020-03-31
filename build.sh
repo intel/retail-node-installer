@@ -149,11 +149,6 @@ updatePxeMenu
 # Finishing message
 printBanner "${C_GREEN}Build Complete!"
 printMsg ""
-printMsg "Note:"
-printMsg "    Some systems may need to have local DNS listener services disabled."
-printMsg "    Please disable them before running the next step, or"
-printMsg "    the system will fail to start dnsmasq."
-printMsg ""
 printMsg "${T_BOLD}Next, please use this command as root to start the services:${T_RESET}"
 printMsg ""
 printMsg "${T_BOLD}${C_GREEN}./run.sh${T_RESET}"
