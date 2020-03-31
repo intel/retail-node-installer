@@ -63,26 +63,31 @@ Target Devices will be connected on the same LAN as the Retail Node Installer. O
 
   NOTE: Please read [Netowrk Setup](#network-setup) above before proceeding.
 
-  1. Install Docker Compose
+  1. ALL the following commands must run as ROOT.  Type `sudo su -` and the your password before proceeding.
+  ```bash
+  sudo su -
+  ```
+
+  2. Install Docker Compose
   ```bash
   mkdir -p /usr/local/bin
   wget -O /usr/local/bin/docker-compose "https://github.com/docker/compose/releases/download/1.25.4/docker-compose-$(uname -s)-$(uname -m)"
   chmod a+x /usr/local/bin/docker-compose
   ```
   
-  2. Clone this project to /opt/rni
+  3. Clone this project to /opt/rni
   ```bash
   cd /opt
   git clone -b master https://github.com/intel/retail-node-installer.git rni
   cd rni
   ```
 
-  3. Build the RNI services. This will take about 5 to 10 minutes.
+  4. Build the RNI services. This will take about 5 to 10 minutes.
   ```bash
   ./build.sh
   ```
 
-  4. Start the RNI services.
+  5. Start the RNI services.
   ```bash
   ./run.sh
   ```
