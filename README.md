@@ -2,19 +2,19 @@
 
 ## What is it?
 
-The Retail Node Installer (RNI) enables ODMs, System Integrators and Developers to automate the installation of a complete operating system and software stack (defined by a Profile) on bare-metal or virtual machines using a "Just-in-Time" provisiong process. The software stack can include software components, middleware, firmware, and applications.  Automating this process increases velocity by focusing resources on rapid development, validation of use cases and scalable deployment.  RNI simplifies customer adoption through confidence gained validating Profiles.  Profiles are cloned and distrubuted through GitHub containing the human readable perscriptive literature to deploy the  complete operating system and software stack.
+The Retail Node Installer (RNI) enables ODMs, System Integrators and Developers to automate the installation of a complete operating system and software stack (defined by a Profile) on bare-metal or virtual machines using a "Just-in-Time" provisiong process. The software stack can include software components, middleware, firmware, and applications.  Automating this process increases velocity by focusing resources on rapid development, validation of use cases and scalable deployment.  RNI simplifies customer adoption through confidence gained validating Profiles.  Profiles are cloned and distributed through GitHub containing the human readable prescriptive literature to deploy the  complete operating system and software stack.
 
 ## Why do I want it?
 
 * This tool potentially can save a team of 30 developers 12,300 man hours that would have been spent on deployment per year.
 
-* This tool potentially can save a system integrator 11,750 man hours in the installation of OS and softare stack deploying on 5,000 devices.
+* This tool potentially can save a system integrator 11,750 man hours in the installation of OS and software stack deploying on 5,000 devices.
 
 ## Why is it different?
 
 A majority of ODMs and SI's use the "golden" image method; by building a complete system by hand and then copying the hard drive contents into a "golden" image.  The problem with this process is golden images are not always easily transferrable from hardware to hardware.  Additionally, after a period of time that golden image falls behind from CVE patches causing the ODM or SI to perform additional steps of installation before shipping.  Golden images are large (measured in gigabytes) and require a lot of disk farm to store.
 
-Retail Node Installer is a "Just-in-Time" provisioning process; at the time of installation it builds and installs all the componenents on the target device with the latest release of the software components.  When the RNI OS boots on the target device it "discovers" the hardware and makes adjustments to the installation process through Profile.  Profiles are small (measured in kilobytes) and pulled via a URL.
+Retail Node Installer is a "Just-in-Time" provisioning process; at the time of installation it builds and installs all the components on the target device with the latest release of the software components.  When the RNI OS boots on the target device it "discovers" the hardware and makes adjustments to the installation process through Profile.  Profiles are small (measured in kilobytes) and pulled via a URL.
 
 ## Introduction
 
