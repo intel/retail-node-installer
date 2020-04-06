@@ -187,11 +187,9 @@ Run `./run.sh` as root. This will start the Retail Node Installer services. _It 
 
 **Booting Target Devices**
 
-1. Make sure the Retail Node Installer is the only active DHCP server in your LAN. If you have not already, disable DHCP on the router, switch, or any other network interface in your LAN.
+1. Boot the target device while connected to your LAN. Make sure you boot this device from network instead of local disk or cd-rom. This will initiate the PXE boot of your target device from the Retail Node Installer.
 
-2. Boot the target device while connected to your LAN. Make sure you boot this device from network instead of local disk or cd-rom. This will initiate the PXE boot of your target device from the Retail Node Installer.
-
-3. After installation, the device will reboot. Manually select the local disk boot option in the PXE menu when it comes up. If the terminal comes up without an error message and notification to check the error log, then it has built successfully!
+2. After installation, if the profile is in "release" mode "prod" it will shutdown.  If the profile is in "release" mode "dev" the device will reboot.  This is a kernel parameter set in the config.yml in a profile "release=prod" or "release=dev". Manually select the local disk boot option in the PXE menu when it comes up. If the terminal comes up without an error message and notification to check the error log, then it has built successfully!
 
 ## Post-deployment Information
 
