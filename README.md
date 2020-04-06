@@ -1,5 +1,9 @@
 # Retail Node Installer (RNI)
 
+## Quick Start Guide
+
+To quickly get started follow the [Quick Installation Guide](#quick-installation-guide)
+
 ## What is it?
 
 The Retail Node Installer (RNI) enables ODMs, System Integrators and Developers to automate the installation of a complete operating system and software stack (defined by a Profile) on bare-metal or virtual machines using a "Just-in-Time" provisiong process. The software stack can include software components, middleware, firmware, and applications.  Automating this process increases velocity by focusing resources on rapid development, validation of use cases and scalable deployment.  RNI simplifies customer adoption through confidence gained validating Profiles.  Profiles are cloned and distributed through GitHub containing the human readable prescriptive literature to deploy the  complete operating system and software stack.
@@ -54,7 +58,7 @@ The following is required:
 
 * **Retail Node Installer** - Minimum Recommended Hardware or VM with 2 CPUs, 20GB HD and 2GB of RAM, running any Linux Distro (headless recommended) that supports Docker
   * `docker` 18.09.3 or greater
-  * `docker-compose` v1.23.2 or greater (use [the official installation guide](https://docs.docker.com/compose/install/))
+  * `docker-compose` v1.23.2 or greater (follow Step 2. of [Quick Installation Guide](#quick-installation-guide) to install) ([official docker-compose guide](https://docs.docker.com/compose/install/))
   * `bash` v4.3.48 or greater
 
 * **Target Device(s)** - Bare-Metal or Virtual Machine(s) with the necessary specifications for your use case. The profile defines what will we be installed and detects hardware on the Target Device. _Note: The Target Devices will be wiped clean during typical usage of the Retail Node Installer._
@@ -77,7 +81,7 @@ Target Devices will be connected on the same LAN as the Retail Node Installer. O
 
 ## Quick Installation Guide
 
-  NOTE: Please read [Netowrk Setup](#network-setup) above before proceeding.
+  NOTE: Please read [Network Setup](#network-setup) above before proceeding.
 
   1. ALL the following commands must run as ROOT.  Type `sudo su -` and the your password before proceeding.
   ```bash
