@@ -81,7 +81,7 @@ Target Devices will be connected on the same LAN as the Retail Node Installer. O
 
 ## Quick Installation Guide
 
-  NOTE: Please read [Network Setup](#network-setup) above before proceeding.
+  NOTE: Please read [Network Setup](#network-setup) above before proceeding.  If using Ubuntu, do not use Snapd Docker, install Docker using aptitude.
 
   1. ALL the following commands must run as ROOT.  Type `sudo su -` and the your password before proceeding.
   ```bash
@@ -114,6 +114,8 @@ Target Devices will be connected on the same LAN as the Retail Node Installer. O
 
   6. Attach to the target system or VM to the same network as RNI.  Turn it on and make sure PXE is enabled in the BIOS or press F12 or F11 at boot to boot from network.  You will see the following screen.
   ![PXE Menu](./images/pxe_menu.png "PXE Menu")
+
+  7. The default login username is `sys-admin` and the default password is `P@ssw0rd!`. This password is defined in the `conf/config.yml` as a kernel argument in the profiles.  See the individual profiles for further instructions.
 
 ## Installing the RNI
 
@@ -203,11 +205,13 @@ Users can get a list of all flags supported by running `./build.sh -h`
 
 **Troubleshooting the Retail Node Installer**
 
-Log information is available in `rni.log` in the root folder. In order to monitor the logs you can run `docker-compose logs -f`
+Log information is available in `builder.log` in the root folder. In order to monitor the logs you can run `docker-compose logs -f`
 
 If it becomes necessary to delete the Retail Node Installer containers and re-create them, run `./run.sh -f` (assuming there are no target devices in your network that are attempting to boot while running this command).
 
 You can use `./run.sh -r` to restart the Retail Node Installer containers.
+
+Retail Node Installer(RNI) will automatically restart upon system reboot.  To stop RNI, from within the "rni" folder type `docker-compose down`
 
 For any other problems that you may encounter during deployment, please consult the [Known Limitations](#known-limitations) section.
 
