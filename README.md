@@ -81,9 +81,9 @@ Target Devices will be connected on the same LAN as the Retail Node Installer. O
 
 ## Quick Installation Guide
 
-  NOTE: Please read [Network Setup](#network-setup) above before proceeding.  If using Ubuntu, do not use Snapd Docker, install Docker using aptitude.
+  NOTE: Please read [Network Setup](#network-setup) above before proceeding.  If using Ubuntu, do not use Snapd Docker, install Docker using aptitude.  Dnsmasq must not been running on the system from some other service.  Please confirm with `ps -auxww | grep dnsmasq`.
 
-  1. ALL the following commands must run as ROOT.  Type `sudo su -` and the your password before proceeding.
+  1. ALL the following commands must run as ROOT.  Type `sudo su -` and the your password before proceeding.  (DO NOT prepend sudo to every command.  `sudo su -` means load root environment versus sudo prepended uses your user's environment to the run commands.)
   ```bash
   sudo su -
   ```
