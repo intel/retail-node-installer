@@ -10,6 +10,7 @@ RUN mkdir -p /srv/tftp/efi64
 
 # Legacy BIOS syslinux binaries
 COPY --from=pxeFileProvider /usr/share/syslinux/lpxelinux.0 /srv/tftp/
+COPY --from=pxeFileProvider /usr/share/syslinux/pxelinux.0 /srv/tftp/
 COPY --from=pxeFileProvider /usr/share/syslinux/menu.c32 /srv/tftp/
 COPY --from=pxeFileProvider /usr/share/syslinux/ldlinux.c32 /srv/tftp/
 COPY --from=pxeFileProvider /usr/share/syslinux/libmenu.c32 /srv/tftp/
