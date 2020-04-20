@@ -133,6 +133,7 @@ renderSystemNetworkTemplates() {
     # Set file locations
     local dnsMasqConf="${dnsMasqConfDir}/dnsmasq.conf"
     local pxeMenuFile="${pxeMenuFileDir}/default"
+    local pxeLegacyMenuFile="${pxeMenuFileDir}/default_legacy"
     # Set template file locations
     local tmpDnsMasqConf="template/dnsmasq/dnsmasq.conf"
     local tmpPxeMenuFile=$(getTmpPxeMenuLocation)
@@ -176,6 +177,7 @@ renderSystemNetworkTemplates() {
     # Copy the modified config files to the real locations
     copySampleFile ${tmpDnsMasqConf}.modified ${dnsMasqConf}
     copySampleFile ${tmpPxeMenuFile}.modified ${pxeMenuFile}
+    cat ${pxeMenuFile} | sed 's#KERNEL http://[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/tftp/#KERNEL /#g' | sed 's#APPEND initrd=http://[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/tftp/#APPEND initrd=/#g' > ${pxeLegacyMenuFile}
 
     # Clean up the modified templates
     rm ${tmpDnsMasqConf}.modified

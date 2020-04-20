@@ -27,7 +27,7 @@ services:
       - ./template/pxe_bg.png:/srv/tftp/efi64/pxe_bg.png
       - ./data/srv/tftp/images:/srv/tftp/images
       - ./data/srv/tftp/images:/srv/tftp/efi64/images
-      - ./data/srv/tftp/pxelinux.cfg/default:/srv/tftp/pxelinux.cfg/default
+      - ./data/srv/tftp/pxelinux.cfg/default_legacy:/srv/tftp/pxelinux.cfg/default
       - ./data/srv/tftp/pxelinux.cfg/default:/srv/tftp/efi64/pxelinux.cfg/default
       - ./data/etc/dnsmasq.conf:/etc/dnsmasq.conf
     network_mode: host
