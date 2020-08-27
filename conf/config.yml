@@ -40,3 +40,22 @@ profiles:
     # This is the name that will be shown on the PXE menu (NOTE: No Spaces)
     name: Ubuntu_18.04_ESM
     custom_git_arguments: --depth=1
+
+  - git_remote_url: https://github.com/intel/rni-profile-base-ubuntu.git
+    profile_branch: desktop
+    profile_base_branch: master
+    git_username: ""
+    git_token: ""
+    # This is the name that will be shown on the PXE menu (NOTE: No Spaces)
+    name: Ubuntu_18.04_Desktop
+    custom_git_arguments: --depth=1
+
+  - git_remote_url: https://github.com/intel/rni-profile-base-ubuntu.git
+    profile_branch: esm-desktop
+    profile_base_branch: master
+    git_username: ""
+    git_token: ""
+    # This is the name that will be shown on the PXE menu (NOTE: No Spaces)
+    name: Ubuntu_18.04_Desktop_ESM
+    custom_git_arguments: --depth=1
+
