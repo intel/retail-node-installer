@@ -12,7 +12,7 @@ RUN apk update && apk add --no-cache \
     rsync \
     wget
 
-RUN git clone https://github.com/linuxkit/linuxkit
+RUN git clone https://github.com/linuxkit/linuxkit --depth 1 --branch v0.8
 
 ENTRYPOINT ["/bin/bash"]
 CMD []
