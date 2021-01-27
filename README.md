@@ -1,4 +1,9 @@
-# Retail Node Installer (RNI)
+# Retail Node Installer (RNI) rebranded to [Edge Software Provisioner (ESP)](https://github.com/intel/edge-software-provisioner)
+
+## New project location
+
+[Edge Software Provisioner](https://github.com/intel/edge-software-provisioner)
+Please navigate to the new project location to learn about new features such as [Virtual PXE](https://github.com/intel/edge-software-provisioner#virtual-pxe)
 
 ## Quick Start Guide
 
