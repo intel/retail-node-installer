@@ -492,6 +492,49 @@ areKernelAndInitrdInProfileFilesYml() {
     return 0
 }
 
+getIsoFromProfileFilesYml() {
+    if [ -z "${files_config_base_os_files__url+x}" ]; then
+        # If the base_os_files section doesn't exist, return false
+        echo "false"
+        return 0
+    else
+        for ((j = 0; j < "${#files_config_base_os_files__url[@]}"; j += 1)); do
+            local filename=${files_config_base_os_files__filename[j]}
+            local type=${files_config_base_os_files__type[j]}
+
+            if [[ "${type}" == "iso" ]]; then
+                echo "${filename}"
+                return 0
+            fi
+        done
+    fi
+    echo "false"
+}
+
+isIsoInProfileFilesYml() {
+    local foundIso="false"
+
+    if [ -z "${files_config_base_os_files__url+x}" ]; then
+        # If the base_os_files section doesn't exist, return false
+        echo "false"
+        return 0
+    else
+        for ((j = 0; j < "${#files_config_base_os_files__url[@]}"; j += 1)); do
+            local filename=${files_config_base_os_files__filename[j]}
+            local type=${files_config_base_os_files__type[j]}
+
+            if [[ "${type}" == "iso" ]]; then
+                echo "true"
+                return 0
+            fi
+
+        done
+    fi
+
+    echo "false"
+    return 0
+}
+
 genProfilePxeMenu() {
     # Not all of these arguments may be used by this function, but this
     # follows a consistent format. See the "profilesActions" function
@@ -576,13 +619,19 @@ genProfilePxeMenu() {
     # then use them. Otherwise, use UOS. In both cases, use the kernel args
     # that are passed by the user.
     profileContainsKernelAndInitrd=$(areKernelAndInitrdInProfileFilesYml)
+    profileContainsIso=$(isIsoInProfileFilesYml)
     kernelFilename=$(getKernelFromProfileFilesYml)
     initrdFilename=$(getInitrdFromProfileFilesYml)
+    isoFilename=$(getIsoFromProfileFilesYml)
 
     if [[ "${profileContainsKernelAndInitrd}" == "true" ]]; then
         local kernelPath="http://@@HOST_IP@@/tftp/images/${name}/${kernelFilename}"
         addLineToPxeMenu "\"    KERNEL ${kernelPath}\""
         kernelArgs="initrd=http://@@HOST_IP@@/tftp/images/${name}/${initrdFilename} ${kernelArgs}"
+    elif [[ "${profileContainsIso}" == "true" ]]; then
+  	    addLineToPxeMenu "\"    LINUX http://@@HOST_IP@@/profile/${name}/memdisk vmalloc=16G \""
+        addLineToPxeMenu "\"    INITRD http://@@HOST_IP@@/tftp/images/${name}/${isoFilename} \""
+        addLineToPxeMenu "\"    APPEND iso raw \""
     else
         # Use utility os (UOS).
         local kernelPath="http://@@HOST_IP@@/tftp/images/uos/vmlinuz"
@@ -599,7 +648,9 @@ genProfilePxeMenu() {
     profileNamePlaceholder="@@PROFILE_NAME@@"
     kernelArgs=$(echo "${kernelArgs}" | sed "s/${profileNamePlaceholder}/${name}/g")
 
-    addLineToPxeMenu "\"    APPEND ${kernelArgs}\""
+    if [[ "${profileContainsIso}" == "false" ]]; then
+	    addLineToPxeMenu "\"    APPEND ${kernelArgs}\""
+    fi
 
     addLineToPxeMenu ''
 

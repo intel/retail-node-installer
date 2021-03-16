@@ -111,6 +111,11 @@ if [[ "${BUILD_IMAGES}" == "true" ]]; then
     run "Building builder-dnsmasq" \
         "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-dnsmasq dockerfiles/dnsmasq" \
         ${LOG_FILE}
+
+    # Build the smb image
+    run "Building builder-smb" \
+    "docker build -q --rm ${DOCKER_BUILD_ARGS} -t builder-smb dockerfiles/smb" \
+    ${LOG_FILE}
 else
     logMsg "Skipping Build of Images"
 fi
