@@ -52,3 +52,13 @@ services:
     volumes:
       - ./template/squid/squid.conf:/etc/squid/squid.conf
       - /var/spool/squid:/var/spool/squid
+
+  smb:
+    image: builder-smb
+    restart: always
+    ports:
+      - 445:445
+    volumes:
+      - ./data/srv/tftp/images/iso:/smbshare
+    tty: true
+    network_mode: bridge
