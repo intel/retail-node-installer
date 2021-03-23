@@ -23,38 +23,21 @@
 # Please make sure to define ALL of the variables below, even if they
 # are empty. Otherwise, this application will not be configured properly.
 profiles:
-  - git_remote_url: https://github.com/intel/rni-profile-base-clearlinux.git
-    profile_branch: slim
+  - git_remote_url: https://github.com/intel/rni-profile-base-ubuntu.git
+    profile_branch: esm
     profile_base_branch: master
     git_username: ""
     git_token: ""
     # This is the name that will be shown on the PXE menu (NOTE: No Spaces)
-    name: Clear_Linux
-    custom_git_arguments: --depth=1
-
-  - git_remote_url: https://github.com/intel/rni-profile-base-clearlinux.git
-    profile_branch: desktop
-    profile_base_branch: master
-    git_username: ""
-    git_token: ""
-    # This is the name that will be shown on the PXE menu (NOTE: No Spaces)
-    name: Clear_Linux_Desktop
+    name: Ubuntu_18.04_ESM
     custom_git_arguments: --depth=1
 
   - git_remote_url: https://github.com/intel/rni-profile-base-ubuntu.git
-    profile_branch: slim
+    profile_branch: esm-desktop
     profile_base_branch: master
     git_username: ""
     git_token: ""
     # This is the name that will be shown on the PXE menu (NOTE: No Spaces)
-    name: Ubuntu_18.04
+    name: Ubuntu_18.04_Desktop_ESM
     custom_git_arguments: --depth=1
 
-  - git_remote_url: https://github.com/intel/rni-profile-base-ubuntu.git
-    profile_branch: desktop
-    profile_base_branch: master
-    git_username: ""
-    git_token: ""
-    # This is the name that will be shown on the PXE menu (NOTE: No Spaces)
-    name: Ubuntu_18.04_Desktop
-    custom_git_arguments: --depth=1
